@@ -5,14 +5,15 @@ from settings import token
 
 
 
-def get_VK_URL(city, year_old, sex, counter):
+
+def get_VK_URL (city, year_old, sex, counter):
     URL = 'https://api.vk.com/method/users.search'
     if sex == 1:
         sex = 2
     else:
         sex = 1
     params = {
-        'sort': 1,
+        'sort': 0,
         'city': city,
         'access_token': token()[1],
         'v': '5.131',
@@ -23,7 +24,7 @@ def get_VK_URL(city, year_old, sex, counter):
         'age_to': int(year_old) + 5,
         'status': 6,
         'offset': counter
-    }
+        }
     resp = requests.get(URL, params=params)
     return resp
 

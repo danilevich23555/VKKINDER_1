@@ -1,11 +1,13 @@
 import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
-from functions import function
+from functions import function, function_no_param
+from user import get_VK_URL_user
 from db import write_db
 from settings import token
 from create_db_or_no import create_db_write_txt
 import datetime
 import json
+from city import get_country, get_city
 
 
 create_db_write_txt()
@@ -14,6 +16,7 @@ create_db_write_txt()
 vk = vk_api.VkApi(token=token()[0])
 longpoll = VkLongPoll(vk)
 counter = 0
+flag = 0
 
 json1 = {
     "one_time": False,
@@ -40,9 +43,11 @@ json1 = {
         ]
     ]
    }
-
+print(json1)
 def write_msg(user_id, message):
     vk.method('messages.send', {'user_id': user_id, 'message': message,  'random_id': 0, 'keyboard': json.dumps(json1)})
+def write_msg1(user_id, message, keyboard):
+    vk.method('messages.send', {'user_id': user_id, 'message': message,  'random_id': 0, 'keyboard': json.dumps(keyboard)})
 
 
 
@@ -51,10 +56,45 @@ for event in longpoll.listen():
     if event.type == VkEventType.MESSAGE_NEW:
         if event.to_me:
             request = event.text
-
             if request == "Подобрать пару" or request == "привет":
                 counter = counter + 1
-                result = function(event.user_id)
+                result_user = get_VK_URL_user(event.user_id)
+                if result_user[0]['city'] == None:
+                    keybord_country = get_country()
+                    write_msg1(event.user_id, 'Для подбора пары необходимо указать Страну, введите с клавиатуры вашу страну!', keybord_country[0])
+                    for event in longpoll.listen():
+                        if event.type == VkEventType.MESSAGE_NEW:
+                            if event.to_me:
+                                request_country = event.text
+                                key_city = get_city(request_country, keybord_country[1])
+                                write_msg1(event.user_id,
+                                           'Для подбора пары необходимо указать город, введите с клавиатуры ваш город!',
+                                           key_city[0])
+                                for event in longpoll.listen():
+                                    if event.type == VkEventType.MESSAGE_NEW:
+                                        if event.to_me:
+                                            request_city = event.text
+                                            flag = flag + 1
+                                            for city_id in range(len(key_city[1])):
+                                                if key_city[1][city_id]['title'] == request_city:
+                                                    id_city = int(key_city[1][city_id]['id'])
+                                                    break
+                                            write_msg(event.user_id,
+                                                      'Для побора пары необходим Ваш год рождения, '
+                                                      'напишите боту его(пример 1991).',
+                                                      )
+                                            for event in longpoll.listen():
+                                                if event.type == VkEventType.MESSAGE_NEW:
+                                                    if event.to_me:
+                                                        request_year_old = event.text
+                                                        break
+                                            break
+                                break
+                if flag == 1:
+                    flag = 0
+                    result = function_no_param(event.user_id, id_city, request_year_old)
+                else:
+                    result = function(event.user_id)
                 for line in range(len(result)):
                     if len(result[line]) == 2:
                         write_db(event.user_id, result[line][0]['id_profile'], result[line][0]['url_profile'],
