@@ -59,6 +59,11 @@ def create_db_write_txt():
             url_foto_1 varchar(300), url_foto_2 varchar(300), url_foto_3 varchar(300));"""
         cur.execute(postgres_insert_query)
         con.commit()
+        cur = con.cursor()
+        postgres_insert_query = """create table if not EXISTS user_nocity_noyearold (id_user integer, id_city integer, 
+        title varchar(300), yearold varchar(300));"""
+        cur.execute(postgres_insert_query)
+        con.commit()
         print('База данных создана.\n'
               'Правило использывания приложения: \n'
               '- необходимо написать слово "привет" в сообщество в VK, куда через некоторое время придут ссылки \n'
